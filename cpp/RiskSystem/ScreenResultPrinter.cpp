@@ -3,11 +3,32 @@
 
 void ScreenResultPrinter::printResults(ScalarResults& results) {
     for (const auto& result : results) {
-        // Write code here to print out the results such that we have:
-        // TradeID : Result : Error
-        // If there is no result then the output should be:
-        // TradeID : Error
-        // If there is no error the output should be:
-        // TradeID : Result
+        const std::string& tradeId = result.getTradeId();
+
+        bool hasResult = true;
+        bool hasError = result.hasError();
+
+        std::cout << tradeId;
+
+        if (hasResult) {
+            std::cout << " : " << result.getValue();
+        }
+
+        if (hasError) {
+            std::cout << " : " << result.getError();
+        }
+
+        std::cout << std::endl;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
