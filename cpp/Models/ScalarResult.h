@@ -4,6 +4,7 @@
 #include <string>
 #include <optional>
 #include <stdexcept>
+#include <memory>
 
 class ScalarResult {
 public:
@@ -24,5 +25,26 @@ private:
     std::optional<std::string> error_;
 };
 
+
+class Iterator {
+public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = ScalarResult;
+    using difference_type = std::ptrdiff_t;
+    using pointer = ScalarResult*;
+    using reference = ScalarResult&;
+
+    Iterator() = default;
+
+    Iterator& operator++();
+    ScalarResult operator*() const;
+    bool operator!=(const Iterator& other) const;
+
+private:
+    friend class ScalarResults;
+    explicit Iterator(std::map<std::string, double>::const_iterator it);
+
+    std::shared_ptr<class ScalarResultsIteratorImpl> impl_;
+};
 #endif // SCALARRESULT_H
 
