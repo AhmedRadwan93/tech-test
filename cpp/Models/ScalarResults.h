@@ -1,47 +1,62 @@
-#ifndef SCALARRESULTS_H
-#define SCALARRESULTS_H
+#include "ScalarResults.h"
 
-#include "IScalarResultReceiver.h"
-#include "ScalarResult.h"
-#include <map>
-#include <vector>
-#include <optional>
-#include <string>
-#include <iterator>
+ScalarResults::~ScalarResults() = default;
 
-class ScalarResults : public IScalarResultReceiver {
+std::optional<ScalarResult> ScalarResults::operator[](const std::string& tradeId) const {
+    auto it = results_.find(tradeId);
+    if (it != results_.end()) {
+        return ScalarResult(it->first, it->second);
+    }
+    return std::nullopt;
+}
+
+bool ScalarResults::containsTrade(const std::string& tradeId) const {
+    return results_.find(tradeId) != results_.end() ||
+           errors_.find(tradeId) != errors_.end();
+}
+
+void ScalarResults::addResult(const std::string& tradeId, double result) {
+    results_[tradeId] = result;
+}
+
+void ScalarResults::addError(const std::string& tradeId, const std::string& error) {
+    errors_[tradeId] = error;
+}
+
+/* =======================
+   Iterator implementation
+   ======================= */
+
+class ScalarResultsIteratorImpl {
 public:
-    virtual ~ScalarResults();
-    std::optional<ScalarResult> operator[](const std::string& tradeId) const;
+    explicit ScalarResultsIteratorImpl(
+        std::map<std::string, double>::const_iterator it)
+        : it_(it) {}
 
-    bool containsTrade(const std::string& tradeId) const;
-
-    virtual void addResult(const std::string& tradeId, double result) override;
-
-    virtual void addError(const std::string& tradeId, const std::string& error) override;
-
-    class Iterator {
-    public:
-        using iterator_category = std::forward_iterator_tag;
-        using value_type = ScalarResult;
-        using difference_type = std::ptrdiff_t;
-        using pointer = ScalarResult*;
-        using reference = ScalarResult&;
-
-        Iterator() = default;
-
-        // Iterator must be constructable from ScalarResults parent
-        Iterator& operator++();
-        ScalarResult operator*() const;
-        bool operator!=(const Iterator& other) const;
-    };
-
-    Iterator begin() const;
-    Iterator end() const;
-
-private:
-    std::map<std::string, double> results_;
-    std::map<std::string, std::string> errors_;
+    std::map<std::string, double>::const_iterator it_;
 };
 
-#endif // SCALARRESULTS_H
+ScalarResults::Iterator::Iterator(
+    std::map<std::string, double>::const_iterator it)
+    : impl_(std::make_shared<ScalarResultsIteratorImpl>(it)) {}
+
+ScalarResults::Iterator& ScalarResults::Iterator::operator++() {
+    ++impl_->it_;
+    return *this;
+}
+
+ScalarResult ScalarResults::Iterator::operator*() const {
+    return ScalarResult(impl_->it_->first, impl_->it_->second);
+}
+
+bool ScalarResults::Iterator::operator!=(const Iterator& other) const {
+    return impl_->it_ != other.impl_->it_;
+}
+
+ScalarResults::Iterator ScalarResults::begin() const {
+    return Iterator(results_.cbegin());
+}
+
+ScalarResults::Iterator ScalarResults::end() const {
+    return Iterator(results_.cend());
+}
